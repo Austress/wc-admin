@@ -5,6 +5,7 @@
  */
 import categories from './categories';
 import notes from './notes';
+import notices from './notices';
 import orders from './orders';
 import reportItems from './reports/items';
 import reportStats from './reports/stats';
@@ -15,12 +16,14 @@ import user from './user';
 function createWcApiSpec() {
 	return {
 		mutations: {
+			...notices.mutations,
 			...settings.mutations,
 			...user.mutations,
 		},
 		selectors: {
 			...categories.selectors,
 			...notes.selectors,
+			...notices.selectors,
 			...orders.selectors,
 			...reportItems.selectors,
 			...reportStats.selectors,
@@ -46,6 +49,9 @@ function createWcApiSpec() {
 					...settings.operations.update( resourceNames, data ),
 					...user.operations.update( resourceNames, data ),
 				];
+			},
+			create( resourceNames, data ) {
+				return [ ...notices.operations.create( resourceNames, data ) ];
 			},
 		},
 	};
