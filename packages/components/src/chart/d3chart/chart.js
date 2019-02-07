@@ -42,6 +42,9 @@ class D3Chart extends Component {
 		this.drawChart = this.drawChart.bind( this );
 		this.getParams = this.getParams.bind( this );
 		this.tooltipRef = createRef();
+		this.state = {
+			isEmpty: false,
+		};
 	}
 
 	drawChart( node ) {
@@ -62,6 +65,7 @@ class D3Chart extends Component {
 		const xOffset = type === 'line' && adjParams.uniqueDates.length <= 1
 			? adjParams.width / 2
 			: 0;
+
 		drawAxis( g, adjParams, xOffset );
 		type === 'line' && drawLines( g, data, adjParams, xOffset );
 		type === 'bar' && drawBars( g, data, adjParams );
@@ -117,6 +121,9 @@ class D3Chart extends Component {
 		const newOrderedKeys = orderedKeys || getOrderedKeys( data, uniqueKeys );
 		const lineData = getLineData( data, newOrderedKeys );
 		const yMax = getYMax( lineData );
+		this.setState( {
+			isEmpty: yMax === 0,
+		} );
 		const yScale = getYScale( adjHeight, yMax );
 		const parseDate = d3UTCParse( dateParser );
 		const uniqueDates = getUniqueDates( lineData, parseDate );
@@ -156,6 +163,17 @@ class D3Chart extends Component {
 		};
 	}
 
+	getEmptyMessage() {
+		const { isEmpty } = this.state;
+		const { emptyMessage } = this.props;
+
+		if ( isEmpty && emptyMessage ) {
+			return (
+				<div className="d3-chart__empty-message">{ emptyMessage }</div>
+			);
+		}
+	}
+
 	render() {
 		const { className, data, height, type } = this.props;
 		const computedWidth = this.getWidth();
@@ -164,6 +182,7 @@ class D3Chart extends Component {
 				className={ classNames( 'd3-chart__container', className ) }
 				style={ { height } }
 			>
+				{ this.getEmptyMessage() }
 				<div className="d3-chart__tooltip" ref={ this.tooltipRef } />
 				<D3Base
 					className={ classNames( this.props.className ) }
@@ -197,6 +216,10 @@ D3Chart.propTypes = {
 	 * Format to parse dates into d3 time format
 	 */
 	dateParser: PropTypes.string.isRequired,
+	/**
+	 * The message to be displayed if there is no data to render.
+	 */
+	emptyMessage: PropTypes.string,
 	/**
 	 * Height of the `svg`.
 	 */
