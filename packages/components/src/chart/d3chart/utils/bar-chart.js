@@ -13,14 +13,14 @@ import moment from 'moment';
 import { getColor } from './color';
 import { calculateTooltipPosition, hideTooltip, showTooltip } from './tooltip';
 
-const handleMouseOverBarChart = ( date, parentNode, node, data, params, position ) => {
+const handleMouseOverBarChart = ( date, parentNode, node, data, params, position, formats, tooltipParams ) => {
 	d3Select( parentNode )
 		.select( '.barfocus' )
 		.attr( 'opacity', '0.1' );
-	showTooltip( params, data.find( e => e.date === date ), position );
+	showTooltip( params, data.find( e => e.date === date ), position, formats, tooltipParams );
 };
 
-export const drawBars = ( node, data, params ) => {
+export const drawBars = ( node, data, params, layout, scales, formats, tooltipParams ) => {
 	const barGroup = node
 		.append( 'g' )
 		.attr( 'class', 'bars' )
@@ -28,14 +28,14 @@ export const drawBars = ( node, data, params ) => {
 		.data( data )
 		.enter()
 		.append( 'g' )
-		.attr( 'transform', d => `translate(${ params.xScale( d.date ) },0)` )
+		.attr( 'transform', d => `translate(${ scales.xScale( d.date ) },0)` )
 		.attr( 'class', 'bargroup' )
 		.attr( 'role', 'region' )
 		.attr(
 			'aria-label',
 			d =>
 				params.mode === 'item-comparison'
-					? params.tooltipLabelFormat( d.date instanceof Date ? d.date : moment( d.date ).toDate() )
+					? formats.tooltipLabelFormat( d.date instanceof Date ? d.date : moment( d.date ).toDate() )
 					: null
 		);
 
@@ -44,18 +44,18 @@ export const drawBars = ( node, data, params ) => {
 		.attr( 'class', 'barfocus' )
 		.attr( 'x', 0 )
 		.attr( 'y', 0 )
-		.attr( 'width', params.xGroupScale.range()[ 1 ] )
-		.attr( 'height', params.height )
+		.attr( 'width', scales.xGroupScale.range()[ 1 ] )
+		.attr( 'height', layout.height )
 		.attr( 'opacity', '0' )
 		.on( 'mouseover', ( d, i, nodes ) => {
 			const position = calculateTooltipPosition(
 				d3Event.target,
 				node.node(),
-				params.tooltipPosition
+				tooltipParams.tooltipPosition
 			);
-			handleMouseOverBarChart( d.date, nodes[ i ].parentNode, node, data, params, position );
+			handleMouseOverBarChart( d.date, nodes[ i ].parentNode, node, data, params, position, formats, tooltipParams );
 		} )
-		.on( 'mouseout', ( d, i, nodes ) => hideTooltip( nodes[ i ].parentNode, params.tooltip ) );
+		.on( 'mouseout', ( d, i, nodes ) => hideTooltip( nodes[ i ].parentNode, tooltipParams.tooltip ) );
 
 	barGroup
 		.selectAll( '.bar' )
@@ -72,16 +72,16 @@ export const drawBars = ( node, data, params ) => {
 		.enter()
 		.append( 'rect' )
 		.attr( 'class', 'bar' )
-		.attr( 'x', d => params.xGroupScale( d.key ) )
-		.attr( 'y', d => params.yScale( d.value ) )
-		.attr( 'width', params.xGroupScale.bandwidth() )
-		.attr( 'height', d => params.height - params.yScale( d.value ) )
+		.attr( 'x', d => scales.xGroupScale( d.key ) )
+		.attr( 'y', d => scales.yScale( d.value ) )
+		.attr( 'width', scales.xGroupScale.bandwidth() )
+		.attr( 'height', d => layout.height - scales.yScale( d.value ) )
 		.attr( 'fill', d => getColor( d.key, params.orderedKeys, params.colorScheme ) )
 		.attr( 'pointer-events', 'none' )
 		.attr( 'tabindex', '0' )
 		.attr( 'aria-label', d => {
 			const label = params.mode === 'time-comparison' && d.label ? d.label : d.key;
-			return `${ label } ${ params.tooltipValueFormat( d.value ) }`;
+			return `${ label } ${ formats.tooltipValueFormat( d.value ) }`;
 		} )
 		.style( 'opacity', d => {
 			const opacity = d.focus ? 1 : 0.1;
@@ -89,8 +89,8 @@ export const drawBars = ( node, data, params ) => {
 		} )
 		.on( 'focus', ( d, i, nodes ) => {
 			const targetNode = d.value > 0 ? d3Event.target : d3Event.target.parentNode;
-			const position = calculateTooltipPosition( targetNode, node.node(), params.tooltipPosition );
-			handleMouseOverBarChart( d.date, nodes[ i ].parentNode, node, data, params, position );
+			const position = calculateTooltipPosition( targetNode, node.node(), tooltipParams.tooltipPosition );
+			handleMouseOverBarChart( d.date, nodes[ i ].parentNode, node, data, params, position, formats, tooltipParams );
 		} )
-		.on( 'blur', ( d, i, nodes ) => hideTooltip( nodes[ i ].parentNode, params.tooltip ) );
+		.on( 'blur', ( d, i, nodes ) => hideTooltip( nodes[ i ].parentNode, tooltipParams.tooltip ) );
 };

@@ -5,7 +5,6 @@
  */
 import { find, get } from 'lodash';
 import { format as d3Format } from 'd3-format';
-import { line as d3Line } from 'd3-shape';
 import moment from 'moment';
 
 /**
@@ -85,17 +84,6 @@ export const getUniqueDates = ( lineData, parseDate ) => {
 		),
 	].sort( ( a, b ) => parseDate( a ) - parseDate( b ) );
 };
-
-/**
- * Describes getLine
- * @param {function} xLineScale - from `getXLineScale`.
- * @param {function} yScale - from `getYScale`.
- * @returns {function} the D3 line function for plotting all category values
- */
-export const getLine = ( xLineScale, yScale ) =>
-	d3Line()
-		.x( d => xLineScale( moment( d.date ).toDate() ) )
-		.y( d => yScale( d.value ) );
 
 /**
  * Describes getDateSpaces

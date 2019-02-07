@@ -107,14 +107,14 @@ export const calculateTooltipPosition = ( element, chart, tooltipPosition, eleme
 	};
 };
 
-const getTooltipRowLabel = ( d, row, params ) => {
+const getTooltipRowLabel = ( d, row, formats ) => {
 	if ( d[ row.key ].labelDate ) {
-		return params.tooltipLabelFormat( moment( d[ row.key ].labelDate ).toDate() );
+		return formats.tooltipLabelFormat( moment( d[ row.key ].labelDate ).toDate() );
 	}
 	return row.key;
 };
 
-export const showTooltip = ( params, d, position ) => {
+export const showTooltip = ( params, d, position, formats, tooltipParams ) => {
 	const keys = params.orderedKeys.filter( row => row.visible ).map(
 		row => `
 				<li class="key-row">
@@ -123,18 +123,18 @@ export const showTooltip = ( params, d, position ) => {
 							class="key-color"
 							style="background-color:${ getColor( row.key, params.orderedKeys, params.colorScheme ) }">
 						</span>
-						<span class="key-key">${ getTooltipRowLabel( d, row, params ) }</span>
+						<span class="key-key">${ getTooltipRowLabel( d, row, formats ) }</span>
 					</div>
-					<span class="key-value">${ params.tooltipValueFormat( d[ row.key ].value ) }</span>
+					<span class="key-value">${ formats.tooltipValueFormat( d[ row.key ].value ) }</span>
 				</li>
 			`
 	);
 
-	const tooltipTitle = params.tooltipTitle
-		? params.tooltipTitle
-		: params.tooltipLabelFormat( moment( d.date ).toDate() );
+	const tooltipTitle = tooltipParams.tooltipTitle
+		? tooltipParams.tooltipTitle
+		: formats.tooltipLabelFormat( moment( d.date ).toDate() );
 
-	d3Select( params.tooltip )
+	d3Select( tooltipParams.tooltip )
 		.style( 'left', position.x + 'px' )
 		.style( 'top', position.y + 'px' )
 		.style( 'visibility', 'visible' ).html( `

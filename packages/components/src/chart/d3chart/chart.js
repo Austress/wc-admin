@@ -15,7 +15,6 @@ import D3Base from './d3base';
 import {
 	getDateSpaces,
 	getOrderedKeys,
-	getLine,
 	getLineData,
 	getUniqueKeys,
 	getUniqueDates,
@@ -50,25 +49,21 @@ class D3Chart extends Component {
 	drawChart( node ) {
 		const { data, margin, type } = this.props;
 		const params = this.getParams();
-		const adjParams = Object.assign( {}, params, {
-			height: params.adjHeight,
-			width: params.adjWidth,
-			tooltip: this.tooltipRef.current,
-			valueType: params.valueType,
-		} );
+		const { chartParams, formats, layout, scales } = params;
+		const tooltipParams = this.getTooltipParams();
 
 		const g = node
 			.attr( 'id', 'chart' )
 			.append( 'g' )
-			.attr( 'transform', `translate(${ margin.left },${ margin.top })` );
+			.attr( 'transform', `translate(${ margin.left }, ${ margin.top })` );
 
-		const xOffset = type === 'line' && adjParams.uniqueDates.length <= 1
-			? adjParams.width / 2
+		const xOffset = type === 'line' && chartParams.uniqueDates.length <= 1
+			? layout.width / 2
 			: 0;
 
-		drawAxis( g, adjParams, xOffset );
-		type === 'line' && drawLines( g, data, adjParams, xOffset );
-		type === 'bar' && drawBars( g, data, adjParams );
+		drawAxis( g, chartParams, layout, scales, formats, xOffset );
+		type === 'line' && drawLines( g, data, chartParams, layout, scales, formats, tooltipParams, xOffset );
+		type === 'bar' && drawBars( g, data, chartParams, layout, scales, formats, tooltipParams );
 	}
 
 	shouldBeCompact() {
@@ -94,6 +89,16 @@ class D3Chart extends Component {
 		return Math.max( width, minimumWidth + margin.left + margin.right );
 	}
 
+	getTooltipParams() {
+		const { tooltipPosition, tooltipTitle } = this.props;
+
+		return {
+			tooltip: this.tooltipRef.current,
+			tooltipPosition,
+			tooltipTitle,
+		};
+	}
+
 	getParams() {
 		const {
 			colorScheme,
@@ -104,10 +109,8 @@ class D3Chart extends Component {
 			margin,
 			mode,
 			orderedKeys,
-			tooltipPosition,
 			tooltipLabelFormat,
 			tooltipValueFormat,
-			tooltipTitle,
 			type,
 			xFormat,
 			x2Format,
@@ -124,43 +127,46 @@ class D3Chart extends Component {
 		this.setState( {
 			isEmpty: yMax === 0,
 		} );
-		const yScale = getYScale( adjHeight, yMax );
 		const parseDate = d3UTCParse( dateParser );
 		const uniqueDates = getUniqueDates( lineData, parseDate );
-		const xLineScale = getXLineScale( uniqueDates, adjWidth );
 		const xScale = getXScale( uniqueDates, adjWidth, compact );
-		const xTicks = getXTicks( uniqueDates, adjWidth, mode, interval );
-		return {
-			adjHeight,
-			adjWidth,
-			colorScheme,
-			dateSpaces: getDateSpaces( data, uniqueDates, adjWidth, xLineScale ),
-			interval,
-			line: getLine( xLineScale, yScale ),
-			lineData,
+		const scales = {
+			xLineScale: getXLineScale( uniqueDates, adjWidth ),
+			xGroupScale: getXGroupScale( orderedKeys, xScale, compact ),
+			xScale,
+			yScale: getYScale( adjHeight, yMax ),
+		};
+		const formats = {
+			tooltipLabelFormat: getFormatter( tooltipLabelFormat, d3TimeFormat ),
+			tooltipValueFormat: getFormatter( tooltipValueFormat ),
+			xFormat: getFormatter( xFormat, d3TimeFormat ),
+			x2Format: getFormatter( x2Format, d3TimeFormat ),
+			yFormat: getFormatter( yFormat ),
+		};
+		const layout = {
+			height: adjHeight,
 			margin,
+			width: adjWidth,
+		};
+		const xTicks = getXTicks( uniqueDates, adjWidth, mode, interval );
+		const chartParams = {
+			colorScheme,
+			dateSpaces: getDateSpaces( data, uniqueDates, adjWidth, scales.xLineScale ),
+			interval,
+			lineData,
 			mode,
 			orderedKeys: newOrderedKeys,
 			parseDate,
-			tooltipPosition,
-			tooltipLabelFormat: getFormatter( tooltipLabelFormat, d3TimeFormat ),
-			tooltipValueFormat: getFormatter( tooltipValueFormat ),
-			tooltipTitle,
 			type,
 			uniqueDates,
 			uniqueKeys,
 			valueType,
-			xFormat: getFormatter( xFormat, d3TimeFormat ),
-			x2Format: getFormatter( x2Format, d3TimeFormat ),
-			xGroupScale: getXGroupScale( orderedKeys, xScale, compact ),
-			xLineScale,
 			xTicks,
-			xScale,
 			yMax,
-			yScale,
 			yTickOffset: getYTickOffset( adjHeight, yMax ),
-			yFormat: getFormatter( yFormat ),
 		};
+
+		return { chartParams, formats, layout, scales };
 	}
 
 	getEmptyMessage() {

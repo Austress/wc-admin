@@ -191,8 +191,8 @@ export const getYGrids = ( yMax ) => {
 	return yGrids;
 };
 
-export const drawAxis = ( node, params, xOffset ) => {
-	const xScale = params.type === 'line' ? params.xLineScale : params.xScale;
+export const drawAxis = ( node, params, layout, scales, formats, xOffset ) => {
+	const xScale = params.type === 'line' ? scales.xLineScale : scales.xScale;
 	const removeDuplicateDates = ( d, i, ticks, formatter ) => {
 		const monthDate = moment( d ).toDate();
 		let prevMonth = i !== 0 ? ticks[ i - 1 ] : ticks[ i ];
@@ -210,31 +210,31 @@ export const drawAxis = ( node, params, xOffset ) => {
 		.append( 'g' )
 		.attr( 'class', 'axis' )
 		.attr( 'aria-hidden', 'true' )
-		.attr( 'transform', `translate(${ xOffset }, ${ params.height })` )
+		.attr( 'transform', `translate(${ xOffset }, ${ layout.height })` )
 		.call(
 			d3AxisBottom( xScale )
 				.tickValues( ticks )
 				.tickFormat( ( d, i ) => params.interval === 'hour'
-					? params.xFormat( d instanceof Date ? d : moment( d ).toDate() )
-					: removeDuplicateDates( d, i, ticks, params.xFormat ) )
+					? formats.xFormat( d instanceof Date ? d : moment( d ).toDate() )
+					: removeDuplicateDates( d, i, ticks, formats.xFormat ) )
 		);
 
 	node
 		.append( 'g' )
 		.attr( 'class', 'axis axis-month' )
 		.attr( 'aria-hidden', 'true' )
-		.attr( 'transform', `translate(${ xOffset }, ${ params.height + 20 })` )
+		.attr( 'transform', `translate(${ xOffset }, ${ layout.height + 20 })` )
 		.call(
 			d3AxisBottom( xScale )
 				.tickValues( ticks )
-				.tickFormat( ( d, i ) => removeDuplicateDates( d, i, ticks, params.x2Format ) )
+				.tickFormat( ( d, i ) => removeDuplicateDates( d, i, ticks, formats.x2Format ) )
 		)
 		.call( g => g.select( '.domain' ).remove() );
 
 	node
 		.append( 'g' )
 		.attr( 'class', 'pipes' )
-		.attr( 'transform', `translate(${ xOffset }, ${ params.height })` )
+		.attr( 'transform', `translate(${ xOffset }, ${ layout.height })` )
 		.call(
 			d3AxisBottom( xScale )
 				.tickValues( ticks )
@@ -246,11 +246,11 @@ export const drawAxis = ( node, params, xOffset ) => {
 		node
 			.append( 'g' )
 			.attr( 'class', 'grid' )
-			.attr( 'transform', `translate(-${ params.margin.left }, 0)` )
+			.attr( 'transform', `translate(-${ layout.margin.left }, 0)` )
 			.call(
-				d3AxisLeft( params.yScale )
+				d3AxisLeft( scales.yScale )
 					.tickValues( yGrids )
-					.tickSize( -params.width - params.margin.left - params.margin.right )
+					.tickSize( -layout.width - layout.margin.left - layout.margin.right )
 					.tickFormat( '' )
 			)
 			.call( g => g.select( '.domain' ).remove() );
@@ -264,7 +264,7 @@ export const drawAxis = ( node, params, xOffset ) => {
 			.call(
 				d3AxisLeft( params.yTickOffset )
 					.tickValues( params.yMax === 0 ? [ yGrids[ 0 ] ] : yGrids )
-					.tickFormat( d => params.yFormat( d !== 0 ? d : 0 ) )
+					.tickFormat( d => formats.yFormat( d !== 0 ? d : 0 ) )
 			);
 	}
 
